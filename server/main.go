@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -26,23 +27,21 @@ func main() {
       fmt.Println("Error accepting connection:", err)
       continue
     }
-
-    req_string := make([]byte, 2048)
-    _, err = CONN.Read(req_string)
-    if err != nil {
-      fmt.Println("Error reading from connection: ", err)
-      os.Exit(1)
-    }
-
-    fmt.Println(string(req_string))
-    fmt.Println("")
+    defer CONN.Close()
     
-    request := ParseReqStr(req_string)
-    fmt.Printf("%+v\n", request)
+    reader := bufio.NewReader(CONN)
+    request, err := ReadRequest(reader)
+    if err != nil {
+      fmt.Println("Error Reading Request: ", err) 
+    } 
+
+    fmt.Println(request.to_string())
 
     response := "HTTP/1.1 200 OK\r\n" +
-    "\r\n"
-
+		"Content-Type: text/plain\r\n" +
+		"Content-Length: 13\r\n" +
+		"\r\n" +
+		"Hello, World!" 
 
     _, err = CONN.Write([]byte(response))
     if err != nil {

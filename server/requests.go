@@ -1,10 +1,11 @@
 package main
 
 import (
-  "fmt"
-  "os"
-  "slices"
-  "bytes"
+	"bufio"
+	"bytes"
+	"fmt"
+	"os"
+	"slices"
 )
 
 type Request struct {
@@ -12,71 +13,88 @@ type Request struct {
   target string
   version string
   headers map[string]string
-  body []byte 
 }
 
-func sepReqFromBody (data []byte) ([]byte, []byte) {
-  request_and_body := bytes.Split(data, []byte("\r\n\r\n"))
+func (request *Request) to_string () string {
+  var str string
 
-  request := request_and_body[0]
-  if len(request_and_body) < 2 {
-    return request, []byte("")
+  str +=
+    "Method: " + request.method + ", " +
+    "Target: " + request.target + ", " +
+    "Version: " +request.version + "\n"
+
+  str += "Headers:\n"
+  for key, val := range request.headers {
+    str += "  " + key + ": " + val + "\n"
   }
 
-  body := request_and_body[1] 
-  return request, body
+  return str
 }
 
-func parseReqLn (reqLn []byte) (string, string, string) {
-  fields := bytes.Split(reqLn, []byte(" "))
+func parseFirstLine (first_line []byte) (string, string, string) {
+  fields := bytes.Split(first_line, []byte(" "))
   if len(fields) < 3 {
-    fmt.Println("request line incorrect: ", reqLn)
+    fmt.Println("request line incorrect: ", (first_line))
     SendResponse(&ResponseIntServerErr)
     os.Exit(1)
   }
-  return string(fields[0]), string(fields[1]), string(fields[2])
+  return string(fields[0]), string(fields[1]), string(fields[2][:len(fields[2])-1])
 }
 
-func ParseReqStr (data []byte) *Request {
-  request_str, body := sepReqFromBody(data)
-
-  lines := bytes.Split(request_str, []byte("\r\n"))
-  request_line := lines[0]
-  method, target, version := parseReqLn(request_line)
-  
-  headers := make(map[string]string, len(lines) - 1)
-  if len(headers) > 0 {
-    for _, header := range lines[1:len(headers)] {
-      headerKV := bytes.Split(header, []byte(": ")) 
-      headers[string(headerKV[0])] = string(headerKV[1])
-    }
+func parseHeader (line []byte) (string, string) {
+  key_val := bytes.Split(line, []byte(": "))
+  if len(key_val) < 2 {
+    fmt.Println("Error processing header: ", string(line))
+    SendResponse(&ResponseIntServerErr)
+    os.Exit(1)
   }
-  
-  request := Request{method, target, version, headers, body}
-  return &request
+  return string(key_val[0]), string(key_val[1][:len(key_val[1])-1])
 }
 
-func HandleGetRequest(req *Request) Status {
+func ReadRequest (reader *bufio.Reader) (*Request, error) {
+  first_line, err := reader.ReadBytes('\n')
+  if err != nil {
+    return nil, err 
+  }
+  method, target, version := parseFirstLine(first_line)
+
+  headers := make(map[string]string)
+  for {
+    line, err := reader.ReadBytes('\n')
+    if err != nil {
+      return nil, err
+    }
+
+    if bytes.Compare(line, []byte("\r\n")) == 0 {
+      break 
+    } else {
+      key, val := parseHeader(line)
+      headers[key] = val
+    }
+
+  }
+  return &Request{method, target, version, headers}, nil
+}
+
+func ValidateRequest(request *Request) {
   valid_headers := []string { "User-Agent", "Accept", "Accept-Encoding", "Connection" }
-  if req.method != "GET" {
+  if request.method != "GET" {
     fmt.Println("Non get request in handle_get")
-    send_status(&StatusIntServerErr)
+    SendResponse(&ResponseIntServerErr)
     os.Exit(1)
   }
 
-  if value, ok := req.headers["Host"]; ok {
+  if value, ok := request.headers["Host"]; ok {
     if value != CONN.LocalAddr().String() {
       fmt.Println("local addr does not match requested addr")
-      send_status(&StatusIntServerErr)
+      SendResponse(&ResponseIntServerErr)
       os.Exit(1)
     }
   }
 
-  for header_name := range req.headers {
+  for header_name := range request.headers {
     if !slices.Contains(valid_headers, header_name) {
-      return StatusNotFound
+      SendResponse(&ResponseNotFound)
     }
   }
-
-  return StatusOK 
 }
