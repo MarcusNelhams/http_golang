@@ -31,7 +31,7 @@ func parseReqLn (reqLn []byte) (string, string, string) {
   fields := bytes.Split(reqLn, []byte(" "))
   if len(fields) < 3 {
     fmt.Println("request line incorrect: ", reqLn)
-    send_status(&StatusIntServerErr)
+    SendResponse(&ResponseIntServerErr)
     os.Exit(1)
   }
   return string(fields[0]), string(fields[1]), string(fields[2])
