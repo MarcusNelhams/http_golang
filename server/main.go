@@ -30,12 +30,21 @@ func main() {
     defer CONN.Close()
     
     reader := bufio.NewReader(CONN)
+
     request, err := ReadRequest(reader)
     if err != nil {
       fmt.Println("Error Reading Request: ", err) 
+      os.Exit(1)
     } 
 
+    count, err := ReaderToFile(reader, "output.txt")
+    if err != nil {
+      fmt.Println("Error transfering data: ", err)
+      os.Exit(1)
+    }
+
     fmt.Println(request.to_string())
+    fmt.Println("bytes transfered: ", count)
 
     response := "HTTP/1.1 200 OK\r\n" +
 		"Content-Type: text/plain\r\n" +
