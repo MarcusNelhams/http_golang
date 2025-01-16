@@ -36,11 +36,21 @@ func main() {
       fmt.Println("Error Reading Request: ", err) 
       os.Exit(1)
     } 
-
-    count, err := ReaderToFile(reader, "output.txt")
-    if err != nil {
-      fmt.Println("Error transfering data: ", err)
-      os.Exit(1)
+   
+    var count int
+    if request.method == "PUT" {
+      count, err = ReaderToFile(reader, "in.txt")
+      if err != nil {
+        fmt.Println("Error reading data from socc: ", err)
+        os.Exit(1)
+      }
+    } else if request.method == "GET" {
+      writer := bufio.NewWriter(CONN)
+      count, err = FileToWriter("out.txt", writer)
+      if err != nil {
+        fmt.Println("Error transfering data to socc: ", err)
+        os.Exit(1)
+      }
     }
 
     fmt.Println(request.to_string())
