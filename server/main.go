@@ -33,10 +33,17 @@ func main() {
 
     request, err := ReadRequest(reader)
     if err != nil {
-      fmt.Println("Error Reading Request: ", err) 
+      fmt.Println("Error Reading Request:", err) 
       os.Exit(1)
     } 
    
+    fmt.Println(request.to_string())
+
+    response := "HTTP/1.1 200 OK\r\n" +
+		"Content-Type: text/plain\r\n" +
+		"Content-Length: 13\r\n" +
+		"\r\n"
+
     var count int
     if request.method == "PUT" {
       count, err = ReaderToFile(reader, "in.txt")
@@ -53,14 +60,7 @@ func main() {
       }
     }
 
-    fmt.Println(request.to_string())
     fmt.Println("bytes transfered: ", count)
-
-    response := "HTTP/1.1 200 OK\r\n" +
-		"Content-Type: text/plain\r\n" +
-		"Content-Length: 13\r\n" +
-		"\r\n" +
-		"Hello, World!" 
 
     _, err = CONN.Write([]byte(response))
     if err != nil {

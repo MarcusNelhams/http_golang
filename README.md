@@ -1,2 +1,2 @@
 # http_golang
-simple http server and client in golang
+Simple http server in golang that processes Get and Put Requests without using the net/http standard library
