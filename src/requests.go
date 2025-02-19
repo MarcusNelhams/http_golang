@@ -122,6 +122,8 @@ func handleRequest(request *Request, conn net.Conn) {
 func handleGetRequest(request *Request, conn net.Conn) {
   validateGetRequest(request, conn)
   response, err := formGetResponse(request)
+  fmt.Println(response.toString())
+  fmt.Println(len(response.headers))
   sendResponse(response, conn)
   if err != nil {
     return

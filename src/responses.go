@@ -18,7 +18,7 @@ type Response struct {
   headers map[string]string 
 }
 
-func (response *Response) toBytes() []byte {
+func (response *Response) toString() string {
   code_str := strconv.Itoa(response.code)
   response_str := 
     response.version + " " +
@@ -29,7 +29,13 @@ func (response *Response) toBytes() []byte {
       response_str += key + ": " + value + "\r\n"
     } 
 
-    return []byte(response_str) 
+    response_str += "\r\n"
+
+    return (response_str) 
+}
+
+func (response *Response) toBytes() []byte {
+    return []byte(response.toString()) 
 }
 
 func formGetResponse(request *Request) (*Response, error) {
