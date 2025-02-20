@@ -28,6 +28,8 @@ func serverLoop (listener net.Listener) () {
       fmt.Println("error")
     }
     handleRequest(request, conn)
+
+    fmt.Println("------------------------------------------------------")
     
     conn.Close()
   }
